@@ -1,0 +1,2099 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta name="theme-color" content="#0B5E3B">
+  <!-- Bloqueia indexação por buscadores enquanto em teste interno.
+       Quando for pra produção (integrado no WordPress da Nori),
+       essa linha deve ser removida ou trocada por "index, follow". -->
+  <meta name="robots" content="noindex, nofollow">
+  <title>Trabalhe Conosco — Supermercados Nori</title>
+
+  <!--
+    PORTAL DE CAPTAÇÃO DE CURRÍCULOS — SUPERMERCADOS NORI
+    =====================================================
+    Etapa 1: casca navegável com dados MOCKADOS.
+    Próxima etapa: substituir mock por fetch real ao backend,
+    adicionar máscara de WhatsApp, validações, upload de PDF e envio.
+
+    Estrutura:
+      - 6 telas (.tela) controladas por display:none/block
+      - Navegação via funções irParaTela(n)
+      - Estado global em window.estado
+      - Sem framework, sem build, vanilla puro
+
+    Cores oficiais Nori:
+      Verde escuro: #0B5E3B
+      Verde claro:  #2A8B5C
+      Verde fundo:  #F0F7F2
+      Vermelho:     #C92A2A
+  -->
+
+  <style>
+    /* ===================================================================
+       RESET E BASE
+       =================================================================== */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      font-size: 16px;
+      -webkit-text-size-adjust: 100%;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+                   'Helvetica Neue', Arial, sans-serif;
+      background: #F0F7F2;
+      color: #1A1A1A;
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+
+    /* ===================================================================
+       LAYOUT GERAL
+       =================================================================== */
+    .container {
+      max-width: 560px;
+      margin: 0 auto;
+      padding: 16px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .header {
+      text-align: center;
+      padding: 20px 0 24px;
+      border-bottom: 2px solid #0B5E3B;
+      margin-bottom: 24px;
+    }
+
+    .logo {
+      font-size: 32px;
+      font-weight: 800;
+      color: #0B5E3B;
+      letter-spacing: -1px;
+      display: inline-block;
+      border-bottom: 4px solid #2A8B5C;
+      padding: 0 4px 2px;
+    }
+
+    .header-subtitulo {
+      font-size: 14px;
+      color: #666;
+      margin-top: 6px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .tela {
+      display: none;
+      flex: 1;
+      flex-direction: column;
+      animation: fadeIn 0.2s ease-out;
+    }
+
+    .tela.ativa {
+      display: flex;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .tela-titulo {
+      font-size: 22px;
+      font-weight: 700;
+      color: #0B5E3B;
+      margin-bottom: 4px;
+    }
+
+    .tela-subtitulo {
+      font-size: 15px;
+      color: #555;
+      margin-bottom: 24px;
+    }
+
+    .tela-conteudo {
+      flex: 1;
+    }
+
+    /* ===================================================================
+       BOTÕES
+       =================================================================== */
+    .botoes-nav {
+      display: flex;
+      gap: 12px;
+      padding: 20px 0 8px;
+      margin-top: 24px;
+      border-top: 1px solid #E0E0E0;
+    }
+
+    .btn {
+      flex: 1;
+      min-height: 52px;
+      padding: 12px 20px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, opacity 0.15s;
+      font-family: inherit;
+    }
+
+    .btn-primario {
+      background: #0B5E3B;
+      color: white;
+    }
+
+    .btn-primario:hover:not(:disabled) {
+      background: #094D31;
+    }
+
+    .btn-primario:disabled {
+      background: #B5C7BC;
+      cursor: not-allowed;
+    }
+
+    .btn-secundario {
+      background: white;
+      color: #0B5E3B;
+      border: 2px solid #0B5E3B;
+    }
+
+    .btn-secundario:hover {
+      background: #F0F7F2;
+    }
+
+    .btn-texto {
+      background: transparent;
+      color: #555;
+      border: none;
+      padding: 8px 12px;
+      font-size: 14px;
+      text-decoration: underline;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    /* ===================================================================
+       FORMULÁRIOS
+       =================================================================== */
+    .campo {
+      margin-bottom: 18px;
+    }
+
+    .campo-label {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 6px;
+    }
+
+    .campo-obrigatorio::after {
+      content: ' *';
+      color: #C92A2A;
+    }
+
+    .campo-ajuda {
+      font-size: 13px;
+      color: #666;
+      margin-top: 4px;
+    }
+
+    .campo-erro {
+      font-size: 13px;
+      color: #C92A2A;
+      margin-top: 4px;
+      display: none;
+    }
+
+    .campo-erro.visivel {
+      display: block;
+    }
+
+    input[type="text"],
+    input[type="email"],
+    input[type="tel"],
+    input[type="date"],
+    select,
+    textarea {
+      width: 100%;
+      min-height: 48px;
+      padding: 12px 14px;
+      border: 1.5px solid #CCC;
+      border-radius: 8px;
+      font-size: 16px;
+      font-family: inherit;
+      background: white;
+      transition: border-color 0.15s;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: #0B5E3B;
+      box-shadow: 0 0 0 3px rgba(11, 94, 59, 0.1);
+    }
+
+    input.invalido, select.invalido {
+      border-color: #C92A2A;
+    }
+
+    /* ===================================================================
+       OPÇÕES DE CIDADE (Tela 0)
+       =================================================================== */
+    .opcoes-cidade {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .opcao-cidade {
+      background: white;
+      border: 2px solid #E0E0E0;
+      border-radius: 10px;
+      padding: 20px;
+      cursor: pointer;
+      text-align: left;
+      font-size: 18px;
+      font-weight: 600;
+      color: #333;
+      transition: all 0.15s;
+      font-family: inherit;
+      min-height: 64px;
+    }
+
+    .opcao-cidade:hover {
+      border-color: #2A8B5C;
+      background: #F0F7F2;
+    }
+
+    .opcao-cidade.selecionada {
+      border-color: #0B5E3B;
+      background: #F0F7F2;
+      color: #0B5E3B;
+    }
+
+    .opcao-aprendiz {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 14px;
+      background: white;
+      border: 1.5px solid #E0E0E0;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+
+    .opcao-aprendiz input {
+      margin-top: 2px;
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .opcao-aprendiz-texto {
+      flex: 1;
+      font-size: 14px;
+      color: #555;
+      line-height: 1.4;
+    }
+
+    .opcao-aprendiz-titulo {
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 2px;
+    }
+
+    /* ===================================================================
+       VAGAS (Tela 1)
+       =================================================================== */
+    .secao-vagas {
+      margin-bottom: 28px;
+    }
+
+    .secao-vagas-titulo {
+      font-size: 13px;
+      font-weight: 700;
+      color: #0B5E3B;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #0B5E3B;
+      margin-bottom: 14px;
+    }
+
+    .grupo-unidade {
+      margin-bottom: 18px;
+    }
+
+    .grupo-unidade-titulo {
+      font-size: 12px;
+      font-weight: 700;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 8px;
+      margin-top: 4px;
+    }
+
+    .unidade-nome {
+      font-size: 15px;
+      font-weight: 600;
+      color: #333;
+      margin: 12px 0 8px;
+      padding-left: 4px;
+    }
+
+    .vaga-card {
+      background: white;
+      border: 1.5px solid #E0E0E0;
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      display: flex;
+      gap: 12px;
+      transition: all 0.15s;
+      min-height: 64px;
+    }
+
+    .vaga-card:hover {
+      border-color: #2A8B5C;
+    }
+
+    .vaga-card.selecionada {
+      border-color: #0B5E3B;
+      background: #F0F7F2;
+    }
+
+    .vaga-card.desabilitada {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* "Caixinha de ordem": vazia quando não selecionada,
+       mostra "1ª", "2ª" ou "3ª" em verde quando selecionada. */
+    .vaga-checkbox {
+      flex-shrink: 0;
+      width: 38px;
+      height: 34px;
+      border: 2px solid #B5B5B5;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 1px;
+      background: white;
+      font-size: 14px;
+      font-weight: 700;
+      color: #0B5E3B;
+      letter-spacing: -0.5px;
+    }
+
+    .vaga-card.selecionada .vaga-checkbox {
+      background: #0B5E3B;
+      border-color: #0B5E3B;
+      color: white;
+    }
+
+    .vaga-info {
+      flex: 1;
+    }
+
+    .vaga-cargo {
+      font-size: 16px;
+      font-weight: 600;
+      color: #222;
+      margin-bottom: 2px;
+    }
+
+    .vaga-detalhes {
+      font-size: 13px;
+      color: #666;
+    }
+
+    .vaga-salario {
+      font-size: 13px;
+      color: #0B5E3B;
+      font-weight: 600;
+      margin-top: 2px;
+    }
+
+    .vaga-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 6px;
+    }
+
+    /* "Ver detalhes" — expande pra mostrar descrição + requisitos */
+    .vaga-detalhes-toggle {
+      display: inline-block;
+      margin-top: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #2A8B5C;
+      cursor: pointer;
+      user-select: none;
+      padding: 2px 0;
+    }
+
+    .vaga-detalhes-toggle:hover {
+      color: #0B5E3B;
+      text-decoration: underline;
+    }
+
+    .vaga-detalhes-painel {
+      display: none;
+      margin-top: 10px;
+      padding: 10px 12px;
+      background: #F7F9F7;
+      border-left: 3px solid #2A8B5C;
+      border-radius: 4px;
+      font-size: 13px;
+      color: #444;
+      line-height: 1.5;
+    }
+
+    .vaga-detalhes-painel.aberto {
+      display: block;
+    }
+
+    .vaga-detalhes-titulo {
+      font-weight: 700;
+      color: #0B5E3B;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 2px;
+    }
+
+    .vaga-detalhes-painel-bloco + .vaga-detalhes-painel-bloco {
+      margin-top: 8px;
+    }
+
+    .vaga-tag {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 10px;
+      background: #E8F3EC;
+      color: #0B5E3B;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .contador-vagas {
+      position: sticky;
+      bottom: 0;
+      background: #0B5E3B;
+      color: white;
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      text-align: center;
+      margin-top: 12px;
+      box-shadow: 0 -4px 12px rgba(0,0,0,0.1);
+    }
+
+    /* ===================================================================
+       CONFIRMAÇÃO POR VAGA (Tela 2)
+       =================================================================== */
+    .confirmacao-vaga {
+      background: white;
+      border: 1.5px solid #E0E0E0;
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+
+    .confirmacao-vaga.confirmada {
+      border-color: #2A8B5C;
+      background: #F0F7F2;
+    }
+
+    .confirmacao-cargo {
+      font-size: 16px;
+      font-weight: 700;
+      color: #0B5E3B;
+      margin-bottom: 4px;
+    }
+
+    .confirmacao-detalhes {
+      font-size: 14px;
+      color: #555;
+      margin-bottom: 12px;
+    }
+
+    .confirmacao-checkbox-wrapper {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      cursor: pointer;
+      padding-top: 8px;
+      border-top: 1px solid #E0E0E0;
+    }
+
+    .confirmacao-checkbox-wrapper input {
+      margin-top: 2px;
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .confirmacao-checkbox-label {
+      flex: 1;
+      font-size: 14px;
+      color: #333;
+      line-height: 1.4;
+    }
+
+    /* ===================================================================
+       UPLOAD DE CURRÍCULO (Tela 4)
+       =================================================================== */
+    .upload-area {
+      border: 2px dashed #2A8B5C;
+      border-radius: 12px;
+      padding: 40px 20px;
+      text-align: center;
+      background: white;
+      margin-bottom: 16px;
+      transition: background 0.15s, border-color 0.15s, transform 0.15s;
+    }
+
+    /* Estado "arquivo sendo arrastado por cima" — feedback visual claro */
+    .upload-area.arrastando {
+      background: #E8F3EC;
+      border-color: #0B5E3B;
+      border-style: solid;
+      transform: scale(1.01);
+    }
+
+    .upload-icone {
+      font-size: 48px;
+      margin-bottom: 12px;
+      color: #2A8B5C;
+      transition: transform 0.15s;
+    }
+
+    .upload-area.arrastando .upload-icone {
+      transform: scale(1.15);
+    }
+
+    .upload-titulo {
+      font-size: 16px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 4px;
+    }
+
+    .upload-ajuda {
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 16px;
+    }
+
+    /* "ou arraste o arquivo até aqui" só faz sentido em telas que suportam
+       drag-and-drop com mouse. Esconde em telas pequenas (mobile). */
+    .upload-ajuda-desktop {
+      display: none;
+    }
+    @media (min-width: 768px) {
+      .upload-ajuda-desktop {
+        display: inline;
+      }
+    }
+
+    .upload-arquivo {
+      display: none;
+    }
+
+    .upload-info {
+      background: #F0F7F2;
+      border: 1.5px solid #2A8B5C;
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .upload-info-nome {
+      flex: 1;
+      font-size: 14px;
+      font-weight: 600;
+      color: #0B5E3B;
+    }
+
+    /* ===================================================================
+       SUCESSO (Tela 5)
+       =================================================================== */
+    .tela-sucesso {
+      text-align: center;
+      padding: 40px 16px;
+    }
+
+    .sucesso-icone {
+      font-size: 64px;
+      color: #2A8B5C;
+      margin-bottom: 16px;
+    }
+
+    .sucesso-titulo {
+      font-size: 26px;
+      font-weight: 700;
+      color: #0B5E3B;
+      margin-bottom: 12px;
+    }
+
+    .sucesso-mensagem {
+      font-size: 15px;
+      color: #444;
+      line-height: 1.6;
+      max-width: 420px;
+      margin: 0 auto 24px;
+    }
+
+    /* ===================================================================
+       SPINNER DE CARREGAMENTO
+       =================================================================== */
+    .loading-spinner {
+      width: 56px;
+      height: 56px;
+      border: 5px solid #E0E0E0;
+      border-top-color: #0B5E3B;
+      border-radius: 50%;
+      margin: 0 auto 24px;
+      animation: spin 0.9s linear infinite;
+    }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    /* ===================================================================
+       INDICADOR DE PROGRESSO
+       =================================================================== */
+    .progresso {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 20px;
+    }
+
+    .progresso-passo {
+      flex: 1;
+      height: 4px;
+      background: #E0E0E0;
+      border-radius: 2px;
+    }
+
+    .progresso-passo.ativo {
+      background: #0B5E3B;
+    }
+
+    /* ===================================================================
+       UTILITÁRIOS
+       =================================================================== */
+    .escondido {
+      display: none !important;
+    }
+
+    .aviso-box {
+      background: #FFF8E1;
+      border-left: 4px solid #F9A825;
+      padding: 12px 14px;
+      border-radius: 4px;
+      font-size: 13px;
+      color: #6B5500;
+      margin-bottom: 16px;
+    }
+
+    /* ===================================================================
+       RESPONSIVE
+       =================================================================== */
+    @media (max-width: 480px) {
+      .container { padding: 12px; }
+      .tela-titulo { font-size: 20px; }
+      .logo { font-size: 28px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- =================================================================
+       HEADER
+       ================================================================= -->
+  <header class="header">
+    <div class="logo">Nori</div>
+    <div class="header-subtitulo">Trabalhe Conosco</div>
+  </header>
+
+  <!-- =================================================================
+       TELA 0 — Seleção de cidade + aprendiz
+       ================================================================= -->
+  <section id="tela-0" class="tela ativa">
+    <div class="progresso">
+      <div class="progresso-passo ativo"></div>
+      <div class="progresso-passo"></div>
+      <div class="progresso-passo"></div>
+      <div class="progresso-passo"></div>
+      <div class="progresso-passo"></div>
+    </div>
+
+    <h1 class="tela-titulo">Onde você quer trabalhar?</h1>
+    <p class="tela-subtitulo">Escolha a cidade pra ver as vagas disponíveis.</p>
+
+    <div class="tela-conteudo">
+      <div class="opcoes-cidade" id="opcoes-cidade">
+        <!-- preenchido dinamicamente -->
+      </div>
+
+      <label class="opcao-aprendiz">
+        <input type="checkbox" id="check-aprendiz">
+        <div class="opcao-aprendiz-texto">
+          <div class="opcao-aprendiz-titulo">Sou menor aprendiz</div>
+          Vou ver só vagas que aceitam aprendiz (a partir de 14 anos).
+        </div>
+      </label>
+    </div>
+
+    <div class="botoes-nav">
+      <button class="btn btn-primario" id="btn-tela0-continuar" disabled>
+        Continuar
+      </button>
+    </div>
+  </section>
+
+  <!-- =================================================================
+       TELA LOADING — exibida durante o fetch das vagas
+       ================================================================= -->
+  <section id="tela-loading" class="tela">
+    <div class="tela-sucesso">
+      <div class="loading-spinner"></div>
+      <h1 class="sucesso-titulo">Carregando vagas...</h1>
+      <p class="sucesso-mensagem">
+        Aguarde um instante.
+      </p>
+    </div>
+  </section>
+
+  <!-- =================================================================
+       TELA ERRO_CARGA — quando o fetch falha
+       ================================================================= -->
+  <section id="tela-erro-carga" class="tela">
+    <div class="tela-sucesso">
+      <div class="sucesso-icone" style="color:#C92A2A;">⚠</div>
+      <h1 class="sucesso-titulo" style="color:#C92A2A;">Erro de conexão</h1>
+      <p class="sucesso-mensagem" id="erro-carga-mensagem">
+        Não foi possível carregar as vagas no momento.
+        Verifique sua conexão e tente novamente.
+      </p>
+      <button class="btn btn-primario" style="max-width:240px;" id="btn-tentar-novamente">
+        Tentar novamente
+      </button>
+    </div>
+  </section>
+
+  <!-- =================================================================
+       TELA 1 — Vagas (abertas + lista de espera)
+       ================================================================= -->
+  <section id="tela-1" class="tela">
+    <div class="progresso">
+      <div class="progresso-passo ativo"></div>
+      <div class="progresso-passo ativo"></div>
+      <div class="progresso-passo"></div>
+      <div class="progresso-passo"></div>
+      <div class="progresso-passo"></div>
+    </div>
+
+    <h1 class="tela-titulo" id="tela1-titulo">Vagas</h1>
+    <p class="tela-subtitulo">
+      Marque até 3 vagas, em ordem de preferência.
+      Sua 1ª opção é a mais importante.
+    </p>
+
+    <div class="tela-conteudo" id="tela1-conteudo">
+      <!-- preenchido dinamicamente -->
+    </div>
+
+    <div class="contador-vagas escondido" id="contador-vagas">
+      0 vagas selecionadas
+    </div>
+
+    <div class="botoes-nav">
+      <button class="btn btn-secundario" onclick="irParaTela(0)">Voltar</button>
+      <button class="btn btn-primario" id="btn-tela1-continuar" disabled>
+        Continuar
+      </button>
+    </div>
+  </section>
+
+  <!-- =================================================================
+       TELA 2 — Confirmação por vaga
+       ================================================================= -->
+  <section id="tela-2" class="tela">
+    <div class="progresso">
+      <div class="progresso-passo ativo"></div>
+      <div class="progresso-passo ativo"></div>
+      <div class="progresso-passo ativo"></div>
+      <div class="progresso-passo"></div>
+      <div class="progresso-passo"></div>
+    </div>
+
+    <h1 class="tela-titulo">Confirme suas escolhas</h1>
+    <p class="tela-subtitulo">
+      Pra cada vaga, confirme que leu a escala e topa o compromisso.
+    </p>
+
+    <div class="tela-conteudo" id="tela2-conteudo">
+      <!-- preenchido dinamicamente -->
+    </div>
+
+    <div class="botoes-nav">
+      <button class="btn btn-secundario" onclick="irParaTela(1)">Voltar</button>
+      <button class="btn btn-primario" id="btn-tela2-continuar" disabled>
+        Continuar
+      </button>
+    </div>
+  </section>
+
+  <!-- =================================================================
+       TELA 3 — Dados pessoais
+       ================================================================= -->
+  <section id="tela-3" class="tela">
+    <div class="progresso">
+      <div class="progresso-passo ativo"></div>
+      <div class="progresso-passo ativo"></div>
+      <div class="progresso-passo ativo"></div>
+      <div class="progresso-passo ativo"></div>
+      <div class="progresso-passo"></div>
+    </div>
+
+    <h1 class="tela-titulo">Seus dados</h1>
+    <p class="tela-subtitulo">
+      Preenche os campos abaixo. Leva uns 2 minutinhos.
+    </p>
+
+    <div class="tela-conteudo">
+
+      <div class="campo">
+        <label class="campo-label campo-obrigatorio" for="f-nome">Nome completo</label>
+        <input type="text" id="f-nome" autocomplete="name" placeholder="Nome e sobrenome">
+      </div>
+
+      <div class="campo">
+        <label class="campo-label campo-obrigatorio" for="f-whatsapp">WhatsApp</label>
+        <input type="tel" id="f-whatsapp" autocomplete="tel" placeholder="(16) 99999-9999" maxlength="15">
+        <div class="campo-ajuda">Você vai ser contatado por esse número.</div>
+      </div>
+
+      <div class="campo">
+        <label class="campo-label" for="f-email">E-mail (opcional)</label>
+        <input type="email" id="f-email" autocomplete="email" placeholder="seu@email.com">
+      </div>
+
+      <div class="campo">
+        <label class="campo-label campo-obrigatorio" for="f-nascimento">Data de nascimento</label>
+        <input type="date" id="f-nascimento" autocomplete="bday">
+      </div>
+
+      <div class="campo">
+        <label class="campo-label campo-obrigatorio" for="f-bairro">Bairro onde mora</label>
+        <input type="text" id="f-bairro" placeholder="Ex: Centro, Vila Santos...">
+      </div>
+
+      <div class="campo">
+        <label class="campo-label campo-obrigatorio" for="f-cidade-mora">Cidade onde mora</label>
+        <input type="text" id="f-cidade-mora" list="lista-cidades" placeholder="Sua cidade">
+        <datalist id="lista-cidades">
+          <option value="Batatais">
+          <option value="Altinópolis">
+          <option value="Brodowski">
+        </datalist>
+        <div class="campo-ajuda">Mora em outra cidade? Pode digitar normalmente.</div>
+      </div>
+
+      <div class="campo">
+        <label class="campo-label campo-obrigatorio">
+          Caso surja outra vaga, você tem disponibilidade em outros turnos?
+        </label>
+        <div class="campo-ajuda" style="margin-bottom:8px;">Marque todos que você teria disponibilidade.</div>
+        <label class="opcao-aprendiz" style="margin-bottom:6px;">
+          <input type="checkbox" name="turno" value="manha"> <span>Manhã</span>
+        </label>
+        <label class="opcao-aprendiz" style="margin-bottom:6px;">
+          <input type="checkbox" name="turno" value="tarde"> <span>Tarde</span>
+        </label>
+        <label class="opcao-aprendiz">
+          <input type="checkbox" name="turno" value="noite"> <span>Noite</span>
+        </label>
+      </div>
+
+      <div class="campo">
+        <label class="campo-label campo-obrigatorio" for="f-finsemana">Trabalha aos fins de semana?</label>
+        <select id="f-finsemana">
+          <option value="">Selecione...</option>
+          <option value="SIM">Sim, tenho disponibilidade</option>
+          <option value="NAO">Não tenho disponibilidade</option>
+          <option value="NEGOCIAVEL">Depende — posso conversar com o RH</option>
+        </select>
+      </div>
+
+      <div class="campo">
+        <label class="campo-label campo-obrigatorio" for="f-experiencia">Já trabalhou no varejo?</label>
+        <select id="f-experiencia">
+          <option value="">Selecione...</option>
+          <option value="SIM">Sim</option>
+          <option value="NAO">Não, seria meu primeiro</option>
+        </select>
+      </div>
+
+      <div class="campo">
+        <label class="campo-label campo-obrigatorio" for="f-escolaridade">Escolaridade</label>
+        <select id="f-escolaridade">
+          <option value="">Selecione...</option>
+          <option value="FUND_INCOMPLETO">Ensino fundamental incompleto</option>
+          <option value="FUND_COMPLETO">Ensino fundamental completo</option>
+          <option value="MEDIO_INCOMPLETO">Ensino médio incompleto</option>
+          <option value="MEDIO_COMPLETO">Ensino médio completo</option>
+          <option value="SUPERIOR_INCOMPLETO">Superior incompleto</option>
+          <option value="SUPERIOR_COMPLETO">Superior completo</option>
+        </select>
+      </div>
+
+      <!-- Modalidade — escondido se já marcou "sou aprendiz" na Tela 0 -->
+      <div class="campo" id="campo-modalidade">
+        <label class="campo-label campo-obrigatorio" for="f-modalidade">Tipo de contratação</label>
+        <select id="f-modalidade">
+          <option value="">Selecione...</option>
+          <option value="EFETIVO">Efetivo (CLT)</option>
+          <option value="APRENDIZ">Menor aprendiz</option>
+        </select>
+      </div>
+
+      <!-- Campos condicionais de aprendiz -->
+      <div id="campos-aprendiz" class="escondido">
+        <div class="aviso-box">
+          Você marcou que é menor aprendiz. Precisamos de mais duas informações.
+        </div>
+        <div class="campo">
+          <label class="campo-label campo-obrigatorio" for="f-matricula">Matrícula escolar</label>
+          <input type="text" id="f-matricula" placeholder="Número da sua matrícula">
+        </div>
+        <div class="campo">
+          <label class="campo-label campo-obrigatorio" for="f-instituicao">Instituição formadora</label>
+          <input type="text" id="f-instituicao" placeholder="Ex: SENAC, SENAI, Escola tal...">
+        </div>
+      </div>
+
+      <div class="campo">
+        <label class="campo-label campo-obrigatorio" for="f-como-soube">Como ficou sabendo da vaga?</label>
+        <select id="f-como-soube">
+          <option value="">Selecione...</option>
+          <option value="SITE">Nosso site</option>
+          <option value="INDICACAO">Indicação (amigo, parente)</option>
+          <option value="REDE_SOCIAL">Rede social (Instagram, Facebook)</option>
+          <option value="CARTAZ_LOJA">Cartaz na loja</option>
+          <option value="GOOGLE">Google / busca</option>
+          <option value="OUTRO">Outro</option>
+        </select>
+      </div>
+
+      <div class="campo escondido" id="campo-como-soube-detalhe">
+        <label class="campo-label campo-obrigatorio" for="f-como-soube-detalhe">Conta pra gente</label>
+        <input type="text" id="f-como-soube-detalhe" placeholder="Como ficou sabendo?">
+      </div>
+
+    </div>
+
+    <div class="botoes-nav">
+      <button class="btn btn-secundario" onclick="irParaTela(2)">Voltar</button>
+      <button class="btn btn-primario" id="btn-tela3-continuar">Continuar</button>
+    </div>
+  </section>
+
+  <!-- =================================================================
+       TELA 4 — Upload de currículo
+       ================================================================= -->
+  <section id="tela-4" class="tela">
+    <div class="progresso">
+      <div class="progresso-passo ativo"></div>
+      <div class="progresso-passo ativo"></div>
+      <div class="progresso-passo ativo"></div>
+      <div class="progresso-passo ativo"></div>
+      <div class="progresso-passo ativo"></div>
+    </div>
+
+    <h1 class="tela-titulo">Currículo (opcional)</h1>
+    <p class="tela-subtitulo">
+      Se você tiver um currículo em PDF, anexa aqui.
+      Se não tiver, pode seguir sem.
+    </p>
+
+    <div class="tela-conteudo">
+      <!-- Estado inicial: área de upload -->
+      <div id="upload-inicial">
+        <label for="input-arquivo" class="upload-area" id="upload-area" style="cursor:pointer; display:block;">
+          <div class="upload-icone">📄</div>
+          <div class="upload-titulo">Toque pra escolher um PDF</div>
+          <div class="upload-ajuda">
+            <span class="upload-ajuda-desktop">ou arraste o arquivo até aqui · </span>Tamanho máximo: 10 MB
+          </div>
+        </label>
+        <input type="file" id="input-arquivo" class="upload-arquivo" accept="application/pdf">
+      </div>
+
+      <!-- Estado: arquivo selecionado -->
+      <div id="upload-selecionado" class="escondido">
+        <div class="upload-info">
+          <span style="font-size:24px;">📄</span>
+          <div class="upload-info-nome" id="upload-nome">arquivo.pdf</div>
+          <button class="btn-texto" onclick="removerArquivo()">Remover</button>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="botoes-nav">
+      <button class="btn btn-secundario" onclick="irParaTela(3)">Voltar</button>
+      <button class="btn btn-primario" id="btn-tela4-enviar">
+        Enviar candidatura
+      </button>
+    </div>
+  </section>
+
+  <!-- =================================================================
+       TELA 5 — Sucesso
+       ================================================================= -->
+  <section id="tela-5" class="tela">
+    <div class="tela-sucesso">
+      <div class="sucesso-icone">✓</div>
+      <h1 class="sucesso-titulo">Pronto!</h1>
+      <p class="sucesso-mensagem" id="sucesso-mensagem">
+        Candidatura recebida! O RH vai analisar e entrar em contato nos próximos dias.
+      </p>
+    </div>
+  </section>
+
+</div>
+
+<script>
+/* ===================================================================
+   ESTADO GLOBAL
+   ===================================================================
+   Tudo que o candidato vai preenchendo entre as telas mora aqui.
+   Sem auto-save: se fechar a aba, perde. Decisão 3.19.
+*/
+window.estado = {
+  cidade_selecionada: null,
+  eh_aprendiz_tela0: false,
+  vagas_selecionadas: [],  // array de { id_vaga, ordem_preferencia, _vaga_obj }
+  confirmacoes: {},        // { id_vaga: true }
+  candidato: {},
+  curriculo_arquivo: null,
+};
+
+/* ===================================================================
+   CONFIGURAÇÃO DO BACKEND
+   ===================================================================
+   URL pública do Web App do Apps Script.
+   Pra trocar (DEV vs PROD ou após re-deploy), atualize esta única
+   constante. A URL não tem segredo — qualquer um pode descobrir
+   olhando o código-fonte da página. O backend tá protegido por
+   validação de payload e rate limit (Camadas 1, 2 e 3 do anti-flood).
+
+   IMPORTANTE: o backend espera POST com Content-Type: text/plain
+   (não application/json) pra evitar preflight CORS.
+*/
+const URL_BACKEND = 'https://script.google.com/macros/s/AKfycbzc-HGzhwzA6rZd7Kd3B6vcvYt_HE4S3o7ckocrXmR6jm7Y1adhx9JUdSHfrVmX1B-Z/exec';
+
+/* ===================================================================
+   DADOS DE VAGAS — preenchidos via fetch ao backend
+   ===================================================================
+   Estrutura idêntica à que vem em /exec?action=listar_vagas:
+     { cidades: [...], por_cidade: { BATATAIS: { vagas_abertas, lista_espera, totais }, ... } }
+*/
+let vagasCarregadas = null;
+
+const TIPO_UNIDADE_LABEL = {
+  "LOJA": "Lojas",
+  "CD": "Centro de Distribuição",
+  "ESCRITORIO": "Escritório"
+};
+
+const TIPO_UNIDADE_LABEL_LE = {
+  "LOJA": "Em qualquer loja",
+  "CD": "No Centro de Distribuição",
+  "ESCRITORIO": "No Escritório"
+};
+
+const CIDADE_LABEL = {
+  "BATATAIS": "Batatais",
+  "ALTINOPOLIS": "Altinópolis",
+  "BRODOWSKI": "Brodowski"
+};
+
+const TAG_LABEL = {
+  "NOTURNO_ADICIONAL": "Adicional noturno",
+  "PRIORITARIA": "Prioritária",
+  "PROXIMA_ONIBUS": "Próxima de ônibus",
+  "SALARIO_ACIMA_MEDIA": "Salário acima da média",
+  "NOVA": "Nova",
+  "URGENTE": "Urgente",
+  "ACEITA_SEM_EXPERIENCIA": "Sem experiência"
+};
+
+const MAX_VAGAS = 3;
+
+/* ===================================================================
+   NAVEGAÇÃO ENTRE TELAS
+   =================================================================== */
+/* ===================================================================
+   NAVEGAÇÃO ENTRE TELAS — agora aceita IDs string ("loading", "erro-carga")
+   além de números (0 a 5)
+   =================================================================== */
+function irParaTela(id) {
+  document.querySelectorAll('.tela').forEach(t => t.classList.remove('ativa'));
+  // se vier número, monta "tela-N"; se vier string, "tela-STRING"
+  const idDom = typeof id === 'number' ? 'tela-' + id : 'tela-' + id;
+  const alvo = document.getElementById(idDom);
+  if (alvo) {
+    alvo.classList.add('ativa');
+    window.scrollTo(0, 0);
+  }
+}
+
+/* ===================================================================
+   FETCH DAS VAGAS — chamado UMA VEZ no carregamento da página
+   ===================================================================
+   Faz GET ao /exec?action=listar_vagas e armazena em vagasCarregadas.
+   Em caso de falha, mostra a tela de erro com botão "tentar novamente".
+
+   IMPORTANTE: o fetch é disparado já no init (DOMContentLoaded), pra
+   que quando o candidato terminar a Tela 0 as vagas já estejam prontas.
+   Se ainda não chegaram, a Tela Loading aparece e a função abrirTela1()
+   espera o resultado.
+*/
+let promessaCarregamentoVagas = null;
+
+function carregarVagas() {
+  promessaCarregamentoVagas = fetch(URL_BACKEND + '?action=listar_vagas', {
+    method: 'GET',
+    redirect: 'follow',
+  })
+    .then(r => r.json())
+    .then(json => {
+      if (!json.ok) {
+        throw new Error(json.codigo || 'ERRO_DESCONHECIDO');
+      }
+      vagasCarregadas = json;
+      return json;
+    });
+  return promessaCarregamentoVagas;
+}
+
+/* ===================================================================
+   TELA 0 — Cidade e aprendiz
+   =================================================================== */
+function montarTela0() {
+  const container = document.getElementById('opcoes-cidade');
+  container.innerHTML = '';
+
+  // Se as vagas ainda não chegaram, mostra um aviso discreto e desabilita
+  // até carregarem. Em rede boa, o fetch termina antes do candidato escolher.
+  if (!vagasCarregadas) {
+    container.innerHTML = '<div class="aviso-box">Carregando cidades disponíveis...</div>';
+    promessaCarregamentoVagas
+      .then(() => montarTela0())  // remonta quando chegar
+      .catch(() => {
+        container.innerHTML = '<div class="aviso-box" style="background:#FDE8E8;border-color:#C92A2A;color:#7A1A1A;">Não foi possível carregar as cidades. Verifique sua conexão.</div>';
+      });
+    return;
+  }
+
+  vagasCarregadas.cidades.forEach(cidade => {
+    const btn = document.createElement('button');
+    btn.className = 'opcao-cidade';
+    btn.textContent = CIDADE_LABEL[cidade] || cidade;
+    btn.dataset.cidade = cidade;
+    btn.onclick = () => selecionarCidade(cidade, btn);
+    container.appendChild(btn);
+  });
+
+  document.getElementById('check-aprendiz').addEventListener('change', (e) => {
+    window.estado.eh_aprendiz_tela0 = e.target.checked;
+  });
+
+  document.getElementById('btn-tela0-continuar').onclick = () => {
+    abrirTela1();
+  };
+}
+
+function selecionarCidade(cidade, btn) {
+  document.querySelectorAll('.opcao-cidade').forEach(o => o.classList.remove('selecionada'));
+  btn.classList.add('selecionada');
+  window.estado.cidade_selecionada = cidade;
+  document.getElementById('btn-tela0-continuar').disabled = false;
+}
+
+/* ===================================================================
+   ABRIR TELA 1 — espera o fetch terminar antes de montar
+   ===================================================================
+   Se já tem vagas em memória, abre direto.
+   Caso contrário, mostra a Tela Loading e espera.
+*/
+function abrirTela1() {
+  if (vagasCarregadas) {
+    montarTela1();
+    irParaTela(1);
+    return;
+  }
+
+  irParaTela('loading');
+  promessaCarregamentoVagas
+    .then(() => {
+      montarTela1();
+      irParaTela(1);
+    })
+    .catch(() => {
+      mostrarErroCarga();
+    });
+}
+
+function mostrarErroCarga() {
+  irParaTela('erro-carga');
+  document.getElementById('btn-tentar-novamente').onclick = () => {
+    irParaTela('loading');
+    carregarVagas()
+      .then(() => {
+        montarTela1();
+        irParaTela(1);
+      })
+      .catch(() => {
+        mostrarErroCarga();
+      });
+  };
+}
+
+/* ===================================================================
+   TELA 1 — Lista de vagas
+   =================================================================== */
+function montarTela1() {
+  const cidade = window.estado.cidade_selecionada;
+  const dados = vagasCarregadas.por_cidade[cidade];
+  const ehAprendiz = window.estado.eh_aprendiz_tela0;
+
+  document.getElementById('tela1-titulo').textContent =
+    'Vagas em ' + (CIDADE_LABEL[cidade] || cidade);
+
+  const cont = document.getElementById('tela1-conteudo');
+  cont.innerHTML = '';
+
+  // ----- VAGAS ABERTAS AGORA -----
+  const temVagasAbertas = ['LOJA', 'CD', 'ESCRITORIO'].some(t =>
+    (dados.vagas_abertas[t] || []).length > 0
+  );
+
+  if (temVagasAbertas) {
+    const secao = document.createElement('div');
+    secao.className = 'secao-vagas';
+    secao.innerHTML = '<div class="secao-vagas-titulo">Vagas abertas agora</div>';
+
+    ['LOJA', 'CD', 'ESCRITORIO'].forEach(tipoUnidade => {
+      const grupos = dados.vagas_abertas[tipoUnidade] || [];
+      if (grupos.length === 0) return;
+
+      const grupoEl = document.createElement('div');
+      grupoEl.className = 'grupo-unidade';
+      grupoEl.innerHTML = '<div class="grupo-unidade-titulo">' +
+        TIPO_UNIDADE_LABEL[tipoUnidade] + '</div>';
+
+      grupos.forEach(grupo => {
+        const unidEl = document.createElement('div');
+        unidEl.innerHTML = '<div class="unidade-nome">' +
+          grupo.empreendimento.nome_exibicao + '</div>';
+
+        grupo.vagas.forEach(vaga => {
+          // Filtra por aprendiz se marcou na Tela 0
+          if (ehAprendiz && vaga.aceita_aprendiz === 'NAO') return;
+          unidEl.appendChild(montarCardVaga(vaga));
+        });
+        grupoEl.appendChild(unidEl);
+      });
+      secao.appendChild(grupoEl);
+    });
+    cont.appendChild(secao);
+  }
+
+  // ----- LISTA DE ESPERA -----
+  const temListaEspera = ['LOJA', 'CD', 'ESCRITORIO'].some(t =>
+    (dados.lista_espera[t] || []).length > 0
+  );
+
+  if (temListaEspera) {
+    const secao = document.createElement('div');
+    secao.className = 'secao-vagas';
+    secao.innerHTML = '<div class="secao-vagas-titulo">Lista de espera</div>';
+
+    ['LOJA', 'CD', 'ESCRITORIO'].forEach(tipoUnidade => {
+      const vagas = dados.lista_espera[tipoUnidade] || [];
+      if (vagas.length === 0) return;
+
+      const grupoEl = document.createElement('div');
+      grupoEl.className = 'grupo-unidade';
+      grupoEl.innerHTML = '<div class="grupo-unidade-titulo">' +
+        TIPO_UNIDADE_LABEL_LE[tipoUnidade] + '</div>';
+
+      vagas.forEach(vaga => {
+        if (ehAprendiz && vaga.aceita_aprendiz === 'NAO') return;
+        grupoEl.appendChild(montarCardVaga(vaga));
+      });
+      secao.appendChild(grupoEl);
+    });
+    cont.appendChild(secao);
+  }
+
+  // Se ficou sem nenhuma vaga (filtro de aprendiz pode esvaziar)
+  if (cont.children.length === 0) {
+    cont.innerHTML = '<div class="aviso-box">No momento não temos vagas abertas pra esse perfil em ' +
+      CIDADE_LABEL[cidade] + '. Tente outra cidade ou volte mais tarde.</div>';
+  }
+
+  atualizarContadorVagas();
+
+  document.getElementById('btn-tela1-continuar').onclick = () => {
+    montarTela2();
+    irParaTela(2);
+  };
+}
+
+function montarCardVaga(vaga) {
+  const card = document.createElement('div');
+  card.className = 'vaga-card';
+  card.dataset.idVaga = vaga.id_vaga;
+
+  let salarioHtml = '';
+  if (vaga.tipo_vaga === 'PONTUAL') {
+    if (vaga.salario_max && vaga.salario_max > vaga.salario_min) {
+      salarioHtml = '<div class="vaga-salario">R$ ' + formatarReal(vaga.salario_min) +
+        ' a R$ ' + formatarReal(vaga.salario_max) + '</div>';
+    } else if (vaga.salario_min) {
+      salarioHtml = '<div class="vaga-salario">A partir de R$ ' +
+        formatarReal(vaga.salario_min) + '</div>';
+    }
+  }
+
+  let tagsHtml = '';
+  if (vaga.tags && vaga.tags.length > 0) {
+    tagsHtml = '<div class="vaga-tags">' +
+      vaga.tags.map(t => '<span class="vaga-tag">' +
+        (TAG_LABEL[t] || t) + '</span>').join('') +
+      '</div>';
+  }
+
+  const escalaHtml = vaga.escala
+    ? '<div class="vaga-detalhes">' + escaparHtml_(vaga.escala) + '</div>'
+    : '<div class="vaga-detalhes" style="font-style:italic;">Cadastro de currículo — sem vaga aberta no momento</div>';
+
+  // "Ver detalhes" — só aparece se tem descrição ou requisitos.
+  // Lista de espera normalmente também tem (texto explicativo do cadastro).
+  let detalhesHtml = '';
+  const temDescricao = vaga.descricao && String(vaga.descricao).trim() !== '';
+  const temRequisitos = vaga.requisitos && String(vaga.requisitos).trim() !== '';
+  if (temDescricao || temRequisitos) {
+    let painelInterior = '';
+    if (temDescricao) {
+      painelInterior +=
+        '<div class="vaga-detalhes-painel-bloco">' +
+          '<div class="vaga-detalhes-titulo">O que você vai fazer</div>' +
+          '<div>' + escaparHtml_(vaga.descricao) + '</div>' +
+        '</div>';
+    }
+    if (temRequisitos) {
+      painelInterior +=
+        '<div class="vaga-detalhes-painel-bloco">' +
+          '<div class="vaga-detalhes-titulo">O que precisamos</div>' +
+          '<div>' + escaparHtml_(vaga.requisitos) + '</div>' +
+        '</div>';
+    }
+    detalhesHtml =
+      '<span class="vaga-detalhes-toggle" data-toggle-detalhes>Ver detalhes ▾</span>' +
+      '<div class="vaga-detalhes-painel" data-painel-detalhes>' + painelInterior + '</div>';
+  }
+
+  card.innerHTML =
+    '<div class="vaga-checkbox"></div>' +
+    '<div class="vaga-info">' +
+      '<div class="vaga-cargo">' + escaparHtml_(vaga.cargo) + '</div>' +
+      escalaHtml +
+      salarioHtml +
+      tagsHtml +
+      detalhesHtml +
+    '</div>';
+
+  // Clique no card todo marca/desmarca a vaga,
+  // MAS o clique no "Ver detalhes" não deve marcar — só expande o painel.
+  card.onclick = () => toggleVaga(vaga, card);
+
+  const toggle = card.querySelector('[data-toggle-detalhes]');
+  if (toggle) {
+    toggle.addEventListener('click', (e) => {
+      e.stopPropagation();  // não propaga pro card → não marca a vaga
+      const painel = card.querySelector('[data-painel-detalhes]');
+      const aberto = painel.classList.toggle('aberto');
+      toggle.textContent = aberto ? 'Ocultar detalhes ▴' : 'Ver detalhes ▾';
+    });
+  }
+
+  return card;
+}
+
+/**
+ * Escapa caracteres HTML pra evitar XSS quando inserimos
+ * texto vindo do backend via innerHTML. Vagas vêm da planilha
+ * editada pelo RH, então o risco é baixo, mas é defensivo.
+ */
+function escaparHtml_(texto) {
+  if (texto === null || texto === undefined) return '';
+  return String(texto)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function toggleVaga(vaga, card) {
+  const idx = window.estado.vagas_selecionadas.findIndex(v => v.id_vaga === vaga.id_vaga);
+
+  if (idx >= 0) {
+    // Já estava marcada → desmarcar
+    window.estado.vagas_selecionadas.splice(idx, 1);
+    // Reordena as restantes
+    window.estado.vagas_selecionadas.forEach((v, i) => v.ordem_preferencia = i + 1);
+  } else {
+    // Não estava marcada → tentar marcar
+    if (window.estado.vagas_selecionadas.length >= MAX_VAGAS) {
+      // Limite atingido — feedback visual leve
+      card.style.animation = 'none';
+      setTimeout(() => { card.style.animation = ''; }, 10);
+      return;
+    }
+    window.estado.vagas_selecionadas.push({
+      id_vaga: vaga.id_vaga,
+      ordem_preferencia: window.estado.vagas_selecionadas.length + 1,
+      _vaga_obj: vaga
+    });
+  }
+
+  redesenhaCardsVagas();
+  atualizarContadorVagas();
+}
+
+function redesenhaCardsVagas() {
+  document.querySelectorAll('.vaga-card').forEach(card => {
+    const id = card.dataset.idVaga;
+    const sel = window.estado.vagas_selecionadas.find(v => v.id_vaga === id);
+    const caixa = card.querySelector('.vaga-checkbox');
+    if (sel) {
+      card.classList.add('selecionada');
+      caixa.textContent = sel.ordem_preferencia + 'ª';
+    } else {
+      card.classList.remove('selecionada');
+      caixa.textContent = '';
+    }
+  });
+}
+
+function atualizarContadorVagas() {
+  const cont = document.getElementById('contador-vagas');
+  const btn = document.getElementById('btn-tela1-continuar');
+  const n = window.estado.vagas_selecionadas.length;
+
+  if (n === 0) {
+    cont.classList.add('escondido');
+    btn.disabled = true;
+  } else {
+    cont.classList.remove('escondido');
+    cont.textContent = n + ' vaga' + (n > 1 ? 's' : '') +
+      ' selecionada' + (n > 1 ? 's' : '') + ' (máx. ' + MAX_VAGAS + ')';
+    btn.disabled = false;
+  }
+}
+
+/* ===================================================================
+   TELA 2 — Confirmações por vaga
+   =================================================================== */
+function montarTela2() {
+  const cont = document.getElementById('tela2-conteudo');
+  cont.innerHTML = '';
+  window.estado.confirmacoes = {};
+
+  window.estado.vagas_selecionadas
+    .slice()
+    .sort((a, b) => a.ordem_preferencia - b.ordem_preferencia)
+    .forEach(item => {
+      const vaga = item._vaga_obj;
+      const ehListaEspera = vaga.tipo_vaga === 'LISTA_ESPERA';
+
+      const textoConfirmacao = ehListaEspera
+        ? 'Entendi que isso é um cadastro pra futuras oportunidades. ' +
+          'Pode demorar semanas ou meses pra surgir uma vaga real.'
+        : 'Li a escala e o horário desta vaga e tenho disponibilidade total ' +
+          'pra esse compromisso.';
+
+      const detalhesHtml = ehListaEspera
+        ? 'Lista de espera • ' + (vaga.cargo)
+        : (vaga.escala || '');
+
+      const card = document.createElement('div');
+      card.className = 'confirmacao-vaga';
+      card.innerHTML =
+        '<div class="confirmacao-cargo">' +
+          item.ordem_preferencia + 'ª opção — ' + vaga.cargo +
+        '</div>' +
+        '<div class="confirmacao-detalhes">' + detalhesHtml + '</div>' +
+        '<label class="confirmacao-checkbox-wrapper">' +
+          '<input type="checkbox" data-conf="' + vaga.id_vaga + '">' +
+          '<span class="confirmacao-checkbox-label">' + textoConfirmacao + '</span>' +
+        '</label>';
+
+      card.querySelector('input').addEventListener('change', (e) => {
+        window.estado.confirmacoes[vaga.id_vaga] = e.target.checked;
+        if (e.target.checked) card.classList.add('confirmada');
+        else card.classList.remove('confirmada');
+        atualizarBtnTela2();
+      });
+
+      cont.appendChild(card);
+    });
+
+  atualizarBtnTela2();
+
+  document.getElementById('btn-tela2-continuar').onclick = () => irParaTela(3);
+}
+
+function atualizarBtnTela2() {
+  const total = window.estado.vagas_selecionadas.length;
+  const confirmadas = Object.values(window.estado.confirmacoes).filter(Boolean).length;
+  document.getElementById('btn-tela2-continuar').disabled = confirmadas < total;
+}
+
+/* ===================================================================
+   TELA 3 — Dados pessoais
+   =================================================================== */
+function montarTela3() {
+  // Se marcou aprendiz na Tela 0, esconde campo modalidade e força APRENDIZ
+  if (window.estado.eh_aprendiz_tela0) {
+    document.getElementById('campo-modalidade').classList.add('escondido');
+    document.getElementById('f-modalidade').value = 'APRENDIZ';
+    document.getElementById('campos-aprendiz').classList.remove('escondido');
+  } else {
+    document.getElementById('campo-modalidade').classList.remove('escondido');
+  }
+
+  // Listener: modalidade APRENDIZ revela campos extras
+  document.getElementById('f-modalidade').addEventListener('change', (e) => {
+    if (e.target.value === 'APRENDIZ') {
+      document.getElementById('campos-aprendiz').classList.remove('escondido');
+    } else {
+      document.getElementById('campos-aprendiz').classList.add('escondido');
+    }
+  });
+
+  // Listener: como_soube=OUTRO revela detalhe
+  document.getElementById('f-como-soube').addEventListener('change', (e) => {
+    if (e.target.value === 'OUTRO') {
+      document.getElementById('campo-como-soube-detalhe').classList.remove('escondido');
+    } else {
+      document.getElementById('campo-como-soube-detalhe').classList.add('escondido');
+    }
+  });
+
+  // Máscara do WhatsApp: (16) 99999-9999
+  const inputWa = document.getElementById('f-whatsapp');
+  inputWa.addEventListener('input', (e) => {
+    e.target.value = aplicarMascaraWhatsapp_(e.target.value);
+  });
+
+  document.getElementById('btn-tela3-continuar').onclick = () => {
+    const resultado = validarTela3_();
+    if (!resultado.ok) {
+      exibirErrosTela3_(resultado.erros);
+      // Rola até o primeiro erro
+      const primeiroErro = document.querySelector('.campo-erro.visivel');
+      if (primeiroErro) primeiroErro.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+    limparErrosTela3_();
+    window.estado.candidato = resultado.dados;
+    irParaTela(4);
+  };
+}
+
+/**
+ * Aplica máscara visual (16) 99999-9999 em tempo real.
+ * Aceita 10 ou 11 dígitos. Texto digitado é normalizado pra só dígitos antes.
+ */
+function aplicarMascaraWhatsapp_(valor) {
+  const digitos = String(valor).replace(/\D/g, '').slice(0, 11);
+  if (digitos.length === 0) return '';
+  if (digitos.length <= 2) return '(' + digitos;
+  if (digitos.length <= 6) return '(' + digitos.slice(0, 2) + ') ' + digitos.slice(2);
+  if (digitos.length <= 10) {
+    return '(' + digitos.slice(0, 2) + ') ' + digitos.slice(2, 6) + '-' + digitos.slice(6);
+  }
+  return '(' + digitos.slice(0, 2) + ') ' + digitos.slice(2, 7) + '-' + digitos.slice(7);
+}
+
+/**
+ * Valida todos os campos da Tela 3, espelhando as regras do Validacao.gs
+ * do backend. Retorna { ok, erros, dados }.
+ *
+ * IMPORTANTE: se mudar uma regra no backend (Validacao.gs:validarCandidato_),
+ * mudar aqui também. Não dá pra confiar só no client-side — o backend
+ * revalida sempre — mas validar aqui dá feedback imediato no mobile.
+ */
+function validarTela3_() {
+  const erros = {};
+  const get = (id) => document.getElementById(id).value.trim();
+
+  // Nome completo: 2 palavras, até 100 chars
+  const nome = get('f-nome');
+  if (!nome) {
+    erros['f-nome'] = 'Nome completo é obrigatório.';
+  } else if (nome.length > 100) {
+    erros['f-nome'] = 'Nome muito longo (máximo 100 caracteres).';
+  } else if (nome.split(/\s+/).length < 2) {
+    erros['f-nome'] = 'Informe nome e sobrenome.';
+  }
+
+  // WhatsApp: 10 ou 11 dígitos após remover não-dígitos
+  const wa = get('f-whatsapp');
+  const waDigitos = wa.replace(/\D/g, '');
+  if (!wa) {
+    erros['f-whatsapp'] = 'WhatsApp é obrigatório.';
+  } else if (waDigitos.length !== 10 && waDigitos.length !== 11) {
+    erros['f-whatsapp'] = 'WhatsApp inválido. Use DDD + número, ex: (16) 99999-8888.';
+  }
+
+  // Email (opcional)
+  const email = get('f-email');
+  if (email && (email.indexOf('@') === -1 || email.indexOf('.') === -1)) {
+    erros['f-email'] = 'E-mail em formato inválido.';
+  }
+
+  // Data de nascimento: obrigatória, idade entre 14 e 100
+  const nasc = get('f-nascimento');
+  if (!nasc) {
+    erros['f-nascimento'] = 'Data de nascimento é obrigatória.';
+  } else if (!/^\d{4}-\d{2}-\d{2}$/.test(nasc)) {
+    erros['f-nascimento'] = 'Data inválida.';
+  } else {
+    const idade = calcularIdade_(nasc);
+    if (idade < 14) {
+      erros['f-nascimento'] = 'Você precisa ter no mínimo 14 anos.';
+    } else if (idade > 100) {
+      erros['f-nascimento'] = 'Data de nascimento parece incorreta.';
+    }
+  }
+
+  // Bairro
+  if (!get('f-bairro')) erros['f-bairro'] = 'Bairro é obrigatório.';
+
+  // Cidade onde mora
+  if (!get('f-cidade-mora')) erros['f-cidade-mora'] = 'Cidade é obrigatória.';
+
+  // Turnos (pelo menos 1)
+  const turnos = Array.from(document.querySelectorAll('input[name="turno"]:checked'))
+    .map(el => el.value);
+  if (turnos.length === 0) {
+    erros['f-turnos'] = 'Selecione pelo menos um turno.';
+  }
+
+  // Fim de semana, experiência, escolaridade, modalidade — selects obrigatórios
+  if (!get('f-finsemana')) erros['f-finsemana'] = 'Selecione uma opção.';
+  if (!get('f-experiencia')) erros['f-experiencia'] = 'Selecione uma opção.';
+  if (!get('f-escolaridade')) erros['f-escolaridade'] = 'Selecione uma opção.';
+
+  // Modalidade: se o campo tá escondido (marcou aprendiz na Tela 0), valor já está forçado
+  const modalidade = document.getElementById('f-modalidade').value;
+  if (!modalidade) erros['f-modalidade'] = 'Selecione o tipo de contratação.';
+
+  // Campos condicionais de APRENDIZ
+  if (modalidade === 'APRENDIZ') {
+    if (!get('f-matricula')) erros['f-matricula'] = 'Matrícula escolar é obrigatória.';
+    if (!get('f-instituicao')) erros['f-instituicao'] = 'Instituição formadora é obrigatória.';
+    // Idade entre 14 e 24 (Lei do Aprendiz)
+    if (nasc && /^\d{4}-\d{2}-\d{2}$/.test(nasc)) {
+      const idade = calcularIdade_(nasc);
+      if (idade > 24) {
+        erros['f-modalidade'] = 'Lei do Aprendiz aceita até 24 anos. Para mais velhos, escolha Efetivo.';
+      }
+    }
+  }
+
+  // Como soube
+  const comoSoube = get('f-como-soube');
+  if (!comoSoube) erros['f-como-soube'] = 'Selecione como ficou sabendo.';
+  if (comoSoube === 'OUTRO' && !get('f-como-soube-detalhe')) {
+    erros['f-como-soube-detalhe'] = 'Conta pra gente como ficou sabendo.';
+  }
+
+  if (Object.keys(erros).length > 0) {
+    return { ok: false, erros: erros };
+  }
+
+  // Tudo OK — monta o objeto `candidato` no formato que o backend espera
+  return {
+    ok: true,
+    dados: {
+      nome_completo: nome,
+      whatsapp: waDigitos,
+      email: email || undefined,
+      data_nascimento: nasc,
+      bairro: get('f-bairro'),
+      cidade: get('f-cidade-mora'),
+      disponibilidade_turnos: turnos,
+      disponibilidade_finsemana: get('f-finsemana'),
+      experiencia_varejo: get('f-experiencia'),
+      escolaridade: get('f-escolaridade'),
+      modalidade: modalidade,
+      matricula_escolar: modalidade === 'APRENDIZ' ? get('f-matricula') : undefined,
+      instituicao_formadora: modalidade === 'APRENDIZ' ? get('f-instituicao') : undefined,
+      como_soube: comoSoube,
+      como_soube_detalhe: comoSoube === 'OUTRO' ? get('f-como-soube-detalhe') : undefined,
+    }
+  };
+}
+
+/**
+ * Exibe os erros de validação ao lado de cada campo.
+ * Cada erro é uma <div class="campo-erro"> que já existe no HTML ou criada dinamicamente.
+ */
+function exibirErrosTela3_(erros) {
+  limparErrosTela3_();
+  Object.keys(erros).forEach(idCampo => {
+    const campo = document.getElementById(idCampo);
+    if (!campo) {
+      // Caso especial: "f-turnos" — não tem input direto com esse ID,
+      // os checkboxes são input[name="turno"]. Anexamos o erro no .campo pai.
+      if (idCampo === 'f-turnos') {
+        const labelTurnos = document.querySelector('label.campo-label.campo-obrigatorio[for=""]')
+          || document.querySelector('input[name="turno"]').closest('.campo');
+        if (labelTurnos) {
+          adicionarMsgErro_(labelTurnos, erros[idCampo]);
+        }
+      }
+      return;
+    }
+    campo.classList.add('invalido');
+    const campoWrapper = campo.closest('.campo');
+    if (campoWrapper) {
+      adicionarMsgErro_(campoWrapper, erros[idCampo]);
+    }
+  });
+}
+
+function adicionarMsgErro_(wrapper, mensagem) {
+  let divErro = wrapper.querySelector('.campo-erro');
+  if (!divErro) {
+    divErro = document.createElement('div');
+    divErro.className = 'campo-erro';
+    wrapper.appendChild(divErro);
+  }
+  divErro.textContent = mensagem;
+  divErro.classList.add('visivel');
+}
+
+function limparErrosTela3_() {
+  document.querySelectorAll('#tela-3 .invalido').forEach(el => el.classList.remove('invalido'));
+  document.querySelectorAll('#tela-3 .campo-erro.visivel').forEach(el => el.classList.remove('visivel'));
+}
+
+function calcularIdade_(dataIso) {
+  const hoje = new Date();
+  const nasc = new Date(dataIso);
+  let idade = hoje.getFullYear() - nasc.getFullYear();
+  const m = hoje.getMonth() - nasc.getMonth();
+  if (m < 0 || (m === 0 && hoje.getDate() < nasc.getDate())) idade--;
+  return idade;
+}
+
+/* ===================================================================
+   TELA 4 — Upload de currículo + ENVIO
+   =================================================================== */
+function montarTela4() {
+  // Caminho 1: usuário clica/toca e seleciona via diálogo do sistema
+  document.getElementById('input-arquivo').addEventListener('change', (e) => {
+    const arq = e.target.files[0];
+    if (!arq) return;
+    aceitarArquivo_(arq);
+  });
+
+  // Caminho 2: drag-and-drop (desktop). Plugamos os 4 eventos no .upload-area.
+  // - dragenter/dragover: precisa preventDefault pra "habilitar" o drop
+  // - dragleave: reseta o visual de hover
+  // - drop: pega o arquivo de fato
+  const area = document.getElementById('upload-area');
+
+  // Sem isso, o browser abre o PDF na própria janela se errar o alvo.
+  // Cobrimos o window inteiro pra evitar acidente.
+  ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(evt => {
+    window.addEventListener(evt, (e) => {
+      // só preventa se o que tá sendo arrastado é um arquivo
+      if (e.dataTransfer && Array.from(e.dataTransfer.types || []).indexOf('Files') !== -1) {
+        e.preventDefault();
+      }
+    });
+  });
+
+  area.addEventListener('dragenter', (e) => {
+    e.preventDefault();
+    area.classList.add('arrastando');
+  });
+  area.addEventListener('dragover', (e) => {
+    e.preventDefault();  // necessário pro drop funcionar
+    area.classList.add('arrastando');
+  });
+  area.addEventListener('dragleave', (e) => {
+    // Só remove a classe se o cursor saiu de fato da área (não pra um filho)
+    if (e.target === area) area.classList.remove('arrastando');
+  });
+  area.addEventListener('drop', (e) => {
+    e.preventDefault();
+    area.classList.remove('arrastando');
+    const arq = e.dataTransfer.files && e.dataTransfer.files[0];
+    if (!arq) return;
+    aceitarArquivo_(arq);
+  });
+
+  document.getElementById('btn-tela4-enviar').onclick = () => {
+    enviarCandidatura_();
+  };
+}
+
+/**
+ * Valida e aceita um arquivo (independente da origem: clique ou drop).
+ * Centraliza a validação pra não duplicar entre os dois caminhos.
+ */
+function aceitarArquivo_(arq) {
+  // Precisa ser PDF
+  const ehPdf = arq.type === 'application/pdf' || arq.name.toLowerCase().endsWith('.pdf');
+  if (!ehPdf) {
+    alert('O arquivo precisa ser um PDF.');
+    document.getElementById('input-arquivo').value = '';
+    return;
+  }
+  // Máx 10 MB
+  const MAX_MB = 10;
+  if (arq.size > MAX_MB * 1024 * 1024) {
+    alert('O arquivo passou de ' + MAX_MB + ' MB. Tente um menor.');
+    document.getElementById('input-arquivo').value = '';
+    return;
+  }
+
+  window.estado.curriculo_arquivo = arq;
+  document.getElementById('upload-nome').textContent = arq.name;
+  document.getElementById('upload-inicial').classList.add('escondido');
+  document.getElementById('upload-selecionado').classList.remove('escondido');
+}
+
+function removerArquivo() {
+  window.estado.curriculo_arquivo = null;
+  document.getElementById('input-arquivo').value = '';
+  document.getElementById('upload-selecionado').classList.add('escondido');
+  document.getElementById('upload-inicial').classList.remove('escondido');
+}
+
+/* ===================================================================
+   ENVIO DA CANDIDATURA
+   ===================================================================
+   Monta o payload completo, converte PDF pra base64 (se houver),
+   faz POST e trata a resposta.
+
+   IMPORTANTE:
+   - Content-Type tem que ser text/plain (não application/json) — Apps Script
+     responde mal a preflight CORS. Backend faz JSON.parse internamente.
+   - token_sessao é UUID v4 gerado no momento do envio (não na abertura
+     da página) — assim cada tentativa de envio recebe um token novo.
+     Se o usuário tenta enviar duas vezes em sequência, a Camada 1 do
+     anti-flood (cache de idempotência no backend) impede a duplicação
+     usando o token. Se o envio falhar e ele tentar de novo, gera token
+     novo e tenta limpo.
+*/
+let enviando = false;  // trava contra duplo-clique no botão Enviar
+
+async function enviarCandidatura_() {
+  if (enviando) return;
+  enviando = true;
+
+  const btn = document.getElementById('btn-tela4-enviar');
+  const textoOriginal = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Enviando...';
+
+  try {
+    const payload = {
+      token_sessao: gerarUuidV4_(),
+      cidade_selecionada: window.estado.cidade_selecionada,
+      candidato: window.estado.candidato,
+      vagas_selecionadas: window.estado.vagas_selecionadas.map(v => ({
+        id_vaga: v.id_vaga,
+        ordem_preferencia: v.ordem_preferencia,
+      })),
+      confirmou_disponibilidade: true,
+    };
+
+    // Anexa currículo se houver
+    if (window.estado.curriculo_arquivo) {
+      btn.textContent = 'Preparando currículo...';
+      const arq = window.estado.curriculo_arquivo;
+      const base64 = await lerArquivoComoBase64_(arq);
+      payload.curriculo = {
+        nome_original: arq.name,
+        mime_type: arq.type || 'application/pdf',
+        base64: base64,
+      };
+    }
+
+    btn.textContent = 'Enviando candidatura...';
+
+    const resp = await fetch(URL_BACKEND, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(payload),
+      redirect: 'follow',
+    });
+
+    const dados = await resp.json();
+
+    if (!dados.ok) {
+      // Erro de validação ou de negócio — mostra mensagem do backend
+      let msg = dados.mensagem || 'Não foi possível registrar sua candidatura.';
+      if (dados.erros && dados.erros.length > 0) {
+        msg += '\n\n' + dados.erros.map(e => '• ' + e.mensagem).join('\n');
+      }
+      if (dados.ref_erro) {
+        msg += '\n\nSe precisar de ajuda, cite o código ' + dados.ref_erro;
+      }
+      alert(msg);
+      return;
+    }
+
+    // Sucesso — mostra Tela 5 com mensagem do backend (adaptativa)
+    document.getElementById('sucesso-mensagem').textContent =
+      dados.mensagem || 'Candidatura recebida!';
+
+    // Se o currículo foi enviado mas não foi aceito, mostra um aviso adicional
+    if (dados.curriculo && dados.curriculo.ok === false) {
+      const aviso = document.createElement('div');
+      aviso.className = 'aviso-box';
+      aviso.style.maxWidth = '420px';
+      aviso.style.margin = '0 auto 16px';
+      aviso.textContent = 'Seu currículo não pôde ser anexado (' +
+        (dados.curriculo.mensagem || 'arquivo não aceito') +
+        '), mas sua candidatura foi registrada normalmente. O RH pode pedir o currículo depois.';
+      const tela5 = document.querySelector('#tela-5 .tela-sucesso');
+      const msgEl = document.getElementById('sucesso-mensagem');
+      tela5.insertBefore(aviso, msgEl.nextSibling);
+    }
+
+    irParaTela(5);
+
+  } catch (erro) {
+    // Erro de rede / parse / inesperado
+    alert(
+      'Não conseguimos enviar sua candidatura. Verifique sua conexão e tente novamente.\n\n' +
+      'Se o problema continuar, entre em contato com o RH.\n\n' +
+      'Detalhe técnico: ' + (erro.message || 'erro desconhecido')
+    );
+  } finally {
+    enviando = false;
+    btn.disabled = false;
+    btn.textContent = textoOriginal;
+  }
+}
+
+/**
+ * Converte um File em base64 puro (sem prefixo data:...;base64,).
+ * O backend espera só o conteúdo base64.
+ */
+function lerArquivoComoBase64_(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      // reader.result é tipo "data:application/pdf;base64,JVBERi0xLjQK..."
+      const completo = reader.result;
+      const virgula = completo.indexOf(',');
+      resolve(virgula >= 0 ? completo.slice(virgula + 1) : completo);
+    };
+    reader.onerror = () => reject(new Error('Falha ao ler o arquivo.'));
+    reader.readAsDataURL(file);
+  });
+}
+
+/**
+ * Gera UUID v4 (caracteres hex apenas — armadilha 7.1 da documentação).
+ * Usa crypto.randomUUID se disponível (navegadores modernos),
+ * com fallback manual.
+ */
+function gerarUuidV4_() {
+  if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+    return window.crypto.randomUUID();
+  }
+  // Fallback: gera manualmente respeitando a regra do v4
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
+/* ===================================================================
+   UTILS
+   =================================================================== */
+function formatarReal(valor) {
+  return valor.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+}
+
+/* ===================================================================
+   INIT
+   ===================================================================
+   Ordem importante:
+   1. Dispara carregarVagas() em paralelo (fetch ao backend)
+   2. Monta as 3 telas estáticas (Tela 0 mostra "carregando cidades" até
+      o fetch chegar; Tela 3 e 4 não dependem de vagas)
+*/
+document.addEventListener('DOMContentLoaded', () => {
+  carregarVagas().catch(() => {
+    // Falha silenciosa aqui — a Tela 0 vai mostrar o erro visual
+    // e a abrirTela1 vai redirecionar pra tela de erro se necessário.
+  });
+  montarTela0();
+  montarTela3();
+  montarTela4();
+});
+
+</script>
+
+</body>
+</html>
