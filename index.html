@@ -641,6 +641,161 @@
     }
 
     /* ===================================================================
+       ACEITE LGPD (Tela 4)
+       =================================================================== */
+    .lgpd-aceite {
+      background: #F0F7F2;
+      border: 1.5px solid #2A8B5C;
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin: 20px 0 8px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      cursor: pointer;
+    }
+
+    .lgpd-aceite input[type="checkbox"] {
+      margin-top: 3px;
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+      flex-shrink: 0;
+      accent-color: #0B5E3B;
+    }
+
+    .lgpd-aceite-texto {
+      flex: 1;
+      font-size: 14px;
+      color: #333;
+      line-height: 1.5;
+    }
+
+    .lgpd-link {
+      color: #0B5E3B;
+      font-weight: 600;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+
+    .lgpd-link:hover {
+      color: #094D31;
+    }
+
+    /* ===================================================================
+       MODAL DE AVISO DE PRIVACIDADE
+       =================================================================== */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.55);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      animation: fadeIn 0.15s ease-out;
+    }
+
+    .modal-overlay.aberto {
+      display: flex;
+    }
+
+    .modal-conteudo {
+      background: white;
+      border-radius: 12px;
+      max-width: 560px;
+      width: 100%;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+    }
+
+    .modal-cabecalho {
+      padding: 16px 20px;
+      border-bottom: 2px solid #0B5E3B;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+
+    .modal-titulo {
+      font-size: 18px;
+      font-weight: 700;
+      color: #0B5E3B;
+    }
+
+    .modal-fechar {
+      background: transparent;
+      border: none;
+      font-size: 28px;
+      line-height: 1;
+      color: #666;
+      cursor: pointer;
+      padding: 0 4px;
+      font-family: inherit;
+    }
+
+    .modal-fechar:hover {
+      color: #0B5E3B;
+    }
+
+    .modal-corpo {
+      padding: 20px;
+      overflow-y: auto;
+      flex: 1;
+      font-size: 14px;
+      line-height: 1.6;
+      color: #333;
+    }
+
+    .modal-corpo h2 {
+      font-size: 15px;
+      font-weight: 700;
+      color: #0B5E3B;
+      margin: 18px 0 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .modal-corpo h2:first-child {
+      margin-top: 0;
+    }
+
+    .modal-corpo p {
+      margin-bottom: 10px;
+    }
+
+    .modal-corpo ul {
+      margin: 4px 0 10px 20px;
+    }
+
+    .modal-corpo li {
+      margin-bottom: 4px;
+    }
+
+    .modal-corpo strong {
+      color: #0B5E3B;
+    }
+
+    .modal-versao {
+      font-size: 12px;
+      color: #888;
+      margin-top: 16px;
+      padding-top: 12px;
+      border-top: 1px solid #E0E0E0;
+      font-style: italic;
+    }
+
+    .modal-rodape {
+      padding: 14px 20px;
+      border-top: 1px solid #E0E0E0;
+      flex-shrink: 0;
+    }
+
+    /* ===================================================================
        SUCESSO (Tela 5)
        =================================================================== */
     .tela-sucesso {
@@ -1070,11 +1225,21 @@
         </div>
       </div>
 
+      <!-- Aceite LGPD: obrigatório, trava o botão Enviar enquanto não marcado -->
+      <label class="lgpd-aceite" for="check-lgpd">
+        <input type="checkbox" id="check-lgpd">
+        <span class="lgpd-aceite-texto">
+          Li e concordo com o
+          <span class="lgpd-link" onclick="event.preventDefault(); event.stopPropagation(); abrirModalLgpd();">Aviso de Privacidade</span>
+          dos Supermercados Nori.
+        </span>
+      </label>
+
     </div>
 
     <div class="botoes-nav">
       <button class="btn btn-secundario" onclick="irParaTela(3)">Voltar</button>
-      <button class="btn btn-primario" id="btn-tela4-enviar">
+      <button class="btn btn-primario" id="btn-tela4-enviar" disabled>
         Enviar candidatura
       </button>
     </div>
@@ -1093,6 +1258,101 @@
     </div>
   </section>
 
+</div>
+
+<!-- =================================================================
+     MODAL: AVISO DE PRIVACIDADE (LGPD)
+     =================================================================
+     Texto v1.0 aprovado pelo departamento jurídico em 2026-06-11.
+     Mudanças no texto exigem nova revisão jurídica + atualização
+     de aceite_lgpd_versao no frontend e backend.
+-->
+<div class="modal-overlay" id="modal-lgpd" onclick="fecharModalLgpd(event)">
+  <div class="modal-conteudo" onclick="event.stopPropagation()">
+    <div class="modal-cabecalho">
+      <div class="modal-titulo">Aviso de Privacidade</div>
+      <button class="modal-fechar" aria-label="Fechar" onclick="fecharModalLgpd()">&times;</button>
+    </div>
+    <div class="modal-corpo">
+
+      <p>Os Supermercados Nori levam sua privacidade a sério. Este aviso explica como tratamos os seus dados pessoais quando você se candidata a uma vaga em nosso sistema.</p>
+
+      <h2>Quem somos</h2>
+      <p>
+        <strong>Controlador dos dados:</strong> Supermercados Nori<br>
+        <strong>Contato para assuntos de privacidade:</strong> contato-privacidade@nori.com.br<br>
+        <strong>Localização:</strong> Batatais — São Paulo
+      </p>
+
+      <h2>Quais dados coletamos</h2>
+      <p>Quando você preenche o formulário, coletamos:</p>
+      <ul>
+        <li><strong>Dados de identificação:</strong> nome completo, data de nascimento</li>
+        <li><strong>Dados de contato:</strong> WhatsApp e, opcionalmente, e-mail</li>
+        <li><strong>Dados de localização:</strong> bairro e cidade onde você mora</li>
+        <li><strong>Dados profissionais:</strong> escolaridade, experiência prévia no varejo, disponibilidade de turnos e fins de semana, tipo de contratação desejada</li>
+        <li><strong>Dados de aprendizagem (se aprendiz):</strong> matrícula escolar e instituição</li>
+        <li><strong>Currículo em PDF:</strong> se você optar por anexar</li>
+        <li><strong>Origem da candidatura:</strong> como ficou sabendo da vaga (pra entender quais canais funcionam melhor)</li>
+      </ul>
+      <p>Coletamos somente o mínimo necessário pra avaliar sua candidatura.</p>
+
+      <h2>Pra que usamos esses dados</h2>
+      <p>Seus dados são utilizados para:</p>
+      <ul>
+        <li><strong>Avaliar sua candidatura</strong> pra vaga que você escolheu</li>
+        <li><strong>Entrar em contato</strong> com você sobre o processo seletivo</li>
+        <li><strong>Calcular a compatibilidade</strong> entre seu perfil e a vaga, incluindo análise por sistemas automatizados (inteligência artificial) que nos ajudam a organizar a fila de avaliação do RH</li>
+        <li><strong>Manter cadastro em lista de espera</strong> pra cargos que ainda não têm vaga aberta no momento</li>
+      </ul>
+      <p><strong>Importante:</strong> a decisão final de contratação é sempre humana, feita pelo RH dos Supermercados Nori. Os sistemas automatizados apenas auxiliam na triagem inicial. Você tem direito de solicitar revisão humana de qualquer análise automatizada (artigo 20 da LGPD).</p>
+
+      <h2>Mantemos seus dados por outras oportunidades</h2>
+      <p>Mesmo após o término do processo seletivo da vaga que você se candidatou, <strong>podemos manter seus dados pelo período de 12 meses</strong> pra eventualmente te oferecer <strong>outras vagas</strong> compatíveis com seu perfil — ainda que diferentes da que você se candidatou originalmente.</p>
+      <p>Você pode pedir a exclusão dos seus dados a qualquer momento (veja a seção "Seus direitos" abaixo). Após os 12 meses, seus dados são descartados automaticamente, exceto se você for contratado(a) — nesse caso, seus dados passam pra ficha de funcionário, com aviso de privacidade próprio.</p>
+
+      <h2>Com quem compartilhamos</h2>
+      <p>Seus dados ficam armazenados em sistemas do Google (Google Sheets e Google Drive), que processam os dados em nosso nome conforme as próprias políticas de privacidade e segurança do Google.</p>
+      <p><strong>Não compartilhamos seus dados com terceiros pra fins de marketing, venda ou qualquer finalidade que não seja recrutamento e seleção pelos Supermercados Nori.</strong></p>
+      <p>Internamente, apenas a equipe de Recursos Humanos tem acesso aos seus dados.</p>
+
+      <h2>Seus direitos</h2>
+      <p>Como titular dos dados, você pode, a qualquer momento:</p>
+      <ul>
+        <li>Pedir acesso aos seus dados</li>
+        <li>Pedir correção de dados incorretos</li>
+        <li>Pedir exclusão dos seus dados</li>
+        <li>Revogar o consentimento dado</li>
+        <li>Pedir revisão humana de análises automatizadas</li>
+        <li>Pedir portabilidade dos dados</li>
+        <li>Obter informações sobre uso dos seus dados</li>
+      </ul>
+      <p>Pra exercer qualquer um desses direitos, envie um e-mail pra <strong>contato-privacidade@nori.com.br</strong> identificando-se com nome completo e WhatsApp usados na candidatura.</p>
+      <p>Atenderemos seu pedido em até 15 dias.</p>
+
+      <h2>Segurança</h2>
+      <p>Adotamos medidas de segurança técnicas e organizacionais pra proteger seus dados contra acesso não autorizado, perda ou alteração indevida. Ainda assim, nenhum sistema é 100% seguro, e nos comprometemos a notificá-lo em caso de incidente que possa afetar seus direitos.</p>
+
+      <h2>Mudanças neste aviso</h2>
+      <p>Podemos atualizar este Aviso de Privacidade ao longo do tempo. A versão atual estará sempre disponível neste link, com a data da última atualização indicada no topo.</p>
+
+      <h2>Base legal</h2>
+      <p>O tratamento dos seus dados se baseia em:</p>
+      <ul>
+        <li><strong>Execução de procedimentos preliminares de contrato</strong> a seu pedido (LGPD, art. 7º, V) — pra avaliação da sua candidatura</li>
+        <li><strong>Consentimento</strong> (LGPD, art. 7º, I) — pra manutenção em banco de talentos e oferta de outras vagas</li>
+      </ul>
+      <p>Você pode revogar o consentimento a qualquer momento, sem prejuízo da candidatura em andamento.</p>
+
+      <p><strong>Ao marcar a caixa "Li e concordo com o Aviso de Privacidade" no formulário de candidatura, você confirma que leu este aviso e concorda com o tratamento dos seus dados nas condições aqui descritas.</strong></p>
+
+      <div class="modal-versao">Versão 1.0 — Atualizado em 11 de junho de 2026</div>
+
+    </div>
+    <div class="modal-rodape">
+      <button class="btn btn-primario" style="width:100%;" onclick="fecharModalLgpd()">Entendi</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -1886,10 +2146,52 @@ function montarTela4() {
     aceitarArquivo_(arq);
   });
 
-  document.getElementById('btn-tela4-enviar').onclick = () => {
+  // Aceite LGPD: trava o botão "Enviar candidatura" até a caixa ser marcada.
+  // O check é OBRIGATÓRIO — sem ele o backend rejeita o payload.
+  const checkLgpd = document.getElementById('check-lgpd');
+  const btnEnviar = document.getElementById('btn-tela4-enviar');
+  checkLgpd.addEventListener('change', () => {
+    btnEnviar.disabled = !checkLgpd.checked;
+  });
+
+  btnEnviar.onclick = () => {
+    // Defesa em profundidade: mesmo que alguém manipule o disabled via DevTools,
+    // a verificação explícita aqui (e a do backend) bloqueia.
+    if (!checkLgpd.checked) {
+      alert('É necessário aceitar o Aviso de Privacidade para enviar.');
+      return;
+    }
     enviarCandidatura_();
   };
 }
+
+/* ===================================================================
+   MODAL DE AVISO DE PRIVACIDADE (LGPD)
+   ===================================================================
+   Abre quando o candidato clica em "Aviso de Privacidade" no checkbox
+   da Tela 4. Fecha por: botão Entendi, X no canto, clique fora do modal,
+   ou tecla ESC.
+*/
+function abrirModalLgpd() {
+  document.getElementById('modal-lgpd').classList.add('aberto');
+  document.body.style.overflow = 'hidden';  // trava scroll da página atrás
+}
+
+function fecharModalLgpd(e) {
+  // Se chamado por clique no overlay, só fecha se o alvo for o overlay
+  // (não fecha se foi clique dentro do modal).
+  if (e && e.target && e.target.id !== 'modal-lgpd') return;
+  document.getElementById('modal-lgpd').classList.remove('aberto');
+  document.body.style.overflow = '';
+}
+
+// Fechar com ESC
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    const modal = document.getElementById('modal-lgpd');
+    if (modal && modal.classList.contains('aberto')) fecharModalLgpd();
+  }
+});
 
 /**
  * Valida e aceita um arquivo (independente da origem: clique ou drop).
@@ -1961,6 +2263,12 @@ async function enviarCandidatura_() {
         ordem_preferencia: v.ordem_preferencia,
       })),
       confirmou_disponibilidade: true,
+      // LGPD: aceite obrigatório. O backend valida que aceite_lgpd === true
+      // e que aceite_lgpd_versao é uma string não vazia. Sem isso rejeita.
+      // A versão precisa bater com a versão exibida no modal de Aviso de
+      // Privacidade (visível no rodapé da modal).
+      aceite_lgpd: true,
+      aceite_lgpd_versao: '1.0',
     };
 
     // Anexa currículo se houver
